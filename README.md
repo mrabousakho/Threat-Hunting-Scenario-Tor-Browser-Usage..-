@@ -11,149 +11,138 @@
 - Kusto Query Language (KQL)
 - Tor Browser
 
-##  Scenario
+Threat Hunt Report (Unauthorized TOR Usage)
+Detection of Unauthorized TOR Browser Installation and Use on Workstation: “buakar-threat-hunting”
 
+
+Scenario:
 Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
 
-### High-Level TOR-Related IoC Discovery Plan
 
-- **Check `DeviceFileEvents`** for any `tor(.exe)` or `firefox(.exe)` file events.
-- **Check `DeviceProcessEvents`** for any signs of installation or usage.
-- **Check `DeviceNetworkEvents`** for any signs of outgoing connections over known TOR ports.
+High-Level TOR related IoC Discovery Plan:
+Check DeviceFileEvents for any tor(.exe) or firefox(.exe) file events
+Check DeviceProcessEvents for any signs of installation or usage
+Check DeviceNetworkEvents for any signs of outgoing connections over known TOR ports
+Steps Taken
+Searched the DeviceFileEvent for any file that had the string “tor” in it and discovered what look the employee “buakar downloaded a tor installer, did something that resulted in many tor-related files being copied to the desktop and the creation of a file called tor-shopping-list.txt. These events began 2026-03-30T02:35:22.1272782Z. 
+Query used to locate the events:
 
----
 
-## Steps Taken
-
-### 1. Searched the `DeviceFileEvents` Table
-
-Searched for any file that had the string "tor" in it and discovered what looks like the user "employee" downloaded a TOR installer, did something that resulted in many TOR-related files being copied to the desktop, and the creation of a file called `tor-shopping-list.txt` on the desktop at `2024-11-08T22:27:19.7259964Z`. These events began at `2024-11-08T22:14:48.6065231Z`.
-
-**Query used to locate events:**
-
-```kql
-DeviceFileEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where InitiatingProcessAccountName == "employee"  
-| where FileName contains "tor"  
-| where Timestamp >= datetime(2024-11-08T22:14:48.6065231Z)  
-| order by Timestamp desc  
-| project Timestamp, DeviceName, ActionType, FileName, FolderPath, SHA256, Account = InitiatingProcessAccountName
-```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/71402e84-8767-44f8-908c-1805be31122d">
-
----
-
-### 2. Searched the `DeviceProcessEvents` Table
-
-Searched for any `ProcessCommandLine` that contained the string "tor-browser-windows-x86_64-portable-14.0.1.exe". Based on the logs returned, at `2024-11-08T22:16:47.4484567Z`, an employee on the "threat-hunt-lab" device ran the file `tor-browser-windows-x86_64-portable-14.0.1.exe` from their Downloads folder, using a command that triggered a silent installation.
-
-**Query used to locate event:**
-
-```kql
-
-DeviceProcessEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where ProcessCommandLine contains "tor-browser-windows-x86_64-portable-14.0.1.exe"  
-| project Timestamp, DeviceName, AccountName, ActionType, FileName, FolderPath, SHA256, ProcessCommandLine
-```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/b07ac4b4-9cb3-4834-8fac-9f5f29709d78">
-
----
-
-### 3. Searched the `DeviceProcessEvents` Table for TOR Browser Execution
-
-Searched for any indication that user "employee" actually opened the TOR browser. There was evidence that they did open it at `2024-11-08T22:17:21.6357935Z`. There were several other instances of `firefox.exe` (TOR) as well as `tor.exe` spawned afterwards.
-
-**Query used to locate events:**
-
-```kql
-DeviceProcessEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where FileName has_any ("tor.exe", "firefox.exe", "tor-browser.exe")  
-| project Timestamp, DeviceName, AccountName, ActionType, FileName, FolderPath, SHA256, ProcessCommandLine  
+DeviceFileEvents
+| where DeviceName == "buakar-threat-h"
+| where InitiatingProcessAccountName == "buakar"
+| where FileName startswith "tor"
+| where Timestamp >= datetime(2026-03-30T02:35:22.1272782Z)
 | order by Timestamp desc
-```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/b13707ae-8c2d-4081-a381-2b521d3a0d8f">
+| project Timestamp, DeviceName, ActionType, FolderPath, SHA256, Account = InitiatingProcessAccountName, FileName
 
----
 
-### 4. Searched the `DeviceNetworkEvents` Table for TOR Network Connections
 
-Searched for any indication the TOR browser was used to establish a connection using any of the known TOR ports. At `2024-11-08T22:18:01.1246358Z`, an employee on the "threat-hunt-lab" device successfully established a connection to the remote IP address `176.198.159.33` on port `9001`. The connection was initiated by the process `tor.exe`, located in the folder `c:\users\employee\desktop\tor browser\browser\torbrowser\tor\tor.exe`. There were a couple of other connections to sites over port `443`.
 
-**Query used to locate events:**
+Searched the DeviceProcessEvents  table for any ProcessCommandLine that contained the string tor-browser-windows-x86_64-portable-15.0.8.exe. Based on log return
+At this time and date Mar 29, 2026 – 9:39:39 PM and employee by the name of
+Buakar on the buakar-threat-hunt device downloaded the Tor Browser installer from the official Tor website, initiating the staging of anonymization tooling.
 
-```kql
-DeviceNetworkEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where InitiatingProcessAccountName != "system"  
-| where InitiatingProcessFileName in ("tor.exe", "firefox.exe")  
-| where RemotePort in ("9001", "9030", "9040", "9050", "9051", "9150", "80", "443")  
-| project Timestamp, DeviceName, InitiatingProcessAccountName, ActionType, RemoteIP, RemotePort, RemoteUrl, InitiatingProcessFileName, InitiatingProcessFolderPath  
-| order by Timestamp desc
-```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/87a02b5b-7d12-4f53-9255-f5e750d0e3cb">
 
----
+DeviceProcessEvents
+| where DeviceName == "buakar-threat-h"
+| where  AccountName =="buakar"
+| where ProcessCommandLine contains "tor.exe"
+| project DeviceName, AccountName, ActionType, FileName, ProcessCommandLine, FolderPath, InitiatingProcessAccountName
 
-## Chronological Event Timeline 
 
-### 1. File Download - TOR Installer
+Searched for DeviceProcessEvent table for any indication that the user employee buakar actually opened the browser. THere was evidence that they did open it at Mar 30, 2026 – 12:28:48 AM.
+There were other instances of firefox.exe and tor.exe
+Query used to locate event:
+DeviceProcessEvents
+| where DeviceName == "buakar-threat-h"
+| where FileName has_any ("tor.exe", "firefox.exe", "tor-browser.exe")
+| where  AccountName =="buakar"
+| where ProcessCommandLine contains "tor.exe"
+| project Timestamp, AccountName, ActionType, FileName, ProcessCommandLine, FolderPath
 
-- **Timestamp:** `2024-11-08T22:14:48.6065231Z`
-- **Event:** The user "employee" downloaded a file named `tor-browser-windows-x86_64-portable-14.0.1.exe` to the Downloads folder.
-- **Action:** File download detected.
-- **File Path:** `C:\Users\employee\Downloads\tor-browser-windows-x86_64-portable-14.0.1.exe`
+Searched for the DeviceNetworkEvent for any indication that the tor browser was used to establish connection using any of the known tor port numbers.
+On Mar 30, 2026 – ~12:30 AM, a remote session was established via Guacamole RDP, Source IP: 10.0.8.9 User: buakar port 9001. There were a few other connections.
+Query used to locate events:
+DeviceNetworkEvents
+| where DeviceName == "buakar-threat-h"
+| where InitiatingProcessAccountName !="system"
+| where InitiatingProcessFileName == "tor.exe"
+| where RemotePort in("9001", "9030", "9040", "9050", "9851", "9150")
+| where isnotempty(RemoteIP)
+| project Timestamp, IsInitiatingProcessRemoteSession, DeviceName, InitiatingProcessAccountName, RemoteIP, RemotePort
 
-### 2. Process Execution - TOR Browser Installation
 
-- **Timestamp:** `2024-11-08T22:16:47.4484567Z`
-- **Event:** The user "employee" executed the file `tor-browser-windows-x86_64-portable-14.0.1.exe` in silent mode, initiating a background installation of the TOR Browser.
-- **Action:** Process creation detected.
-- **Command:** `tor-browser-windows-x86_64-portable-14.0.1.exe /S`
-- **File Path:** `C:\Users\employee\Downloads\tor-browser-windows-x86_64-portable-14.0.1.exe`
 
-### 3. Process Execution - TOR Browser Launch
+ The 1 in the initiatingProcessRemoteSession indicates the process was executed. We also see the remote IPs of the sessions. The remote port 9001 is associated with tor. Firefox with tor was also used for normal browsing over port 443 and 8080. But I filter those out to focus on tor port established connections. 
+Chronological Events
+Phase 1: Tool Acquisition (Initial Access / Preparation)
+Mar 29, 2026 – 9:39:39 PM
+The user buakar downloaded the Tor Browser installer:
+File: tor-browser-windows-x86_64-portable-15.0.8.exe
+Source: https://dist.torproject.org/...
+Location: C:\Users\employee\Download\
+Initiated by:
+explorer.exe (user-driven download)
+Phase 2: Remote Session Activity Begins
+📅 Mar 30, 2026 – ~12:19 AM
+A remote session was established via Guacamole RDP
+Source IP: 10.0.8.9
+User: buakar
+Phase 3: Silent Installation (Defense Evasion)
+📅 Mar 30, 2026 – 12:24:49 AM
+Tor Browser installer executed with:
+tor-browser-windows-x86_64-portable-15.0.8.exe /S
+Parent process:
+cmd.exe
+Phase 4: Installation Artifacts Created
+📅 Mar 30, 2026 – 12:25:23 AM
+Multiple Tor files created:
+tor.txt
+Tor-Launcher.txt
+Installed under:
 
-- **Timestamp:** `2024-11-08T22:17:21.6357935Z`
-- **Event:** User "employee" opened the TOR browser. Subsequent processes associated with TOR browser, such as `firefox.exe` and `tor.exe`, were also created, indicating that the browser launched successfully.
-- **Action:** Process creation of TOR browser-related executables detected.
-- **File Path:** `C:\Users\employee\Desktop\Tor Browser\Browser\TorBrowser\Tor\tor.exe`
-
-### 4. Network Connection - TOR Network
-
-- **Timestamp:** `2024-11-08T22:18:01.1246358Z`
-- **Event:** A network connection to IP `176.198.159.33` on port `9001` by user "employee" was established using `tor.exe`, confirming TOR browser network activity.
-- **Action:** Connection success.
-- **Process:** `tor.exe`
-- **File Path:** `c:\users\employee\desktop\tor browser\browser\torbrowser\tor\tor.exe`
-
-### 5. Additional Network Connections - TOR Browser Activity
-
-- **Timestamps:**
-  - `2024-11-08T22:18:08Z` - Connected to `194.164.169.85` on port `443`.
-  - `2024-11-08T22:18:16Z` - Local connection to `127.0.0.1` on port `9150`.
-- **Event:** Additional TOR network connections were established, indicating ongoing activity by user "employee" through the TOR browser.
-- **Action:** Multiple successful connections detected.
-
-### 6. File Creation - TOR Shopping List
-
-- **Timestamp:** `2024-11-08T22:27:19.7259964Z`
-- **Event:** The user "employee" created a file named `tor-shopping-list.txt` on the desktop, potentially indicating a list or notes related to their TOR browser activities.
-- **Action:** File creation detected.
-- **File Path:** `C:\Users\employee\Desktop\tor-shopping-list.txt`
-
----
-
-## Summary
-
-The user "employee" on the "threat-hunt-lab" device initiated and completed the installation of the TOR browser. They proceeded to launch the browser, establish connections within the TOR network, and created various files related to TOR on their desktop, including a file named `tor-shopping-list.txt`. This sequence of activities indicates that the user actively installed, configured, and used the TOR browser, likely for anonymous browsing purposes, with possible documentation in the form of the "shopping list" file.
-
----
-
-## Response Taken
-
-TOR usage was confirmed on the endpoint `threat-hunt-lab` by the user `employee`. The device was isolated, and the user's direct manager was notified.
-
----
+C:\Users\buakar\Desktop\Tor Browser\
+Phase 5: Tor Browser Execution
+📅 Mar 30, 2026 – 12:28:48 AM
+firefox.exe (Tor Browser) launched
+Phase 6: Tor Service Initialization
+📅 Mar 30, 2026 – 12:28:52 AM
+tor.exe process started with full configuration:
+SOCKS Proxy: 127.0.0.1:9150
+Control Port: 127.0.0.1:9151
+DisableNetwork = 1
+Phase 7: Browser Subprocess Activity
+📅 Mar 30, 2026 – 12:28:57 AM
+Additional firefox.exe processes spawned (browser content processes)
+Phase 8: Internal Proxy Communication (Tor Active)
+📅 Mar 30, 2026 – 12:28:31 AM
+Network event:
+Source: 127.0.0.1
+Destination: 127.0.0.1
+Process: tor.exe
+Phase 9: Post-Activity Artifact Creation
+📅 Mar 30, 2026 – 2:18:40 AM
+File created:
+tor-shopping-list.txt
+Created via: notepad.exe
+During remote session
+Final Threat Interpretation
+This is a complete and intentional sequence of actions, not accidental:
+ Observed Behavior:
+Tool download (Tor Browser)
+Remote access via RDP
+Silent installation (/S)
+Execution of Tor Browser
+Initialization of anonymization proxy
+Active user interaction
+MITRE ATT&CK Mapping
+T1105 – Ingress Tool Transfer (Tor download)
+T1059 – Command Execution (cmd.exe silent install)
+T1090.003 – Multi-hop Proxy (Tor)
+T1021.001 – Remote Services (RDP)
+T1071 – Application Layer Protocol (Tor traffic potential)
+Summary
+On March 29, 2026, at 9:39 PM, user “buakar” downloaded the Tor Browser installer from the official Tor website, initiating the staging of anonymization tooling. At approximately 12:19 AM on March 30, a remote session was established via Guacamole RDP (10.0.8.9), after which the installer was executed silently using cmd.exe with the /S flag, enabling stealth deployment. Within minutes, installation artifacts confirmed successful setup, followed by execution of the Tor Browser (firefox.exe) and its underlying service (tor.exe), which established a local SOCKS proxy for anonymized communication, as evidenced by successful loopback network activity (127.0.0.1). At 2:18 AM, the user created a file (tor-shopping-list.txt) during the same remote session, indicating continued manual interaction. This sequence reflects a deliberate pattern of remote access, covert installation, and activation of anonymization capabilities, consistent with insider misuse and potential defense evasion, and represents a high-risk security event requiring further investigation.
+Response Taken
+TOR usage was confirmed on endpoint buakar-threat-hunt. The device was isolated and the user's direct manager was notified.
