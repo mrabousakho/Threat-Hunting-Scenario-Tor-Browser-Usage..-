@@ -79,10 +79,10 @@ DeviceFileEvents
 - **Author Contact**: https://www.linkedin.com/in/asakho/
 - **Date**: April 1, 2026
 
-## Validated By:
-- **Reviewer Name**: 
-- **Reviewer Contact**: 
-- **Validation Date**: 
+## Validated By: 
+- **Reviewer Name**: Josh Madakor
+- **Reviewer Contact**: https://www.linkedin.com/in/joshmadakor/
+- **Validation Date**: April 1, 2026
 
 ---
 
@@ -94,4 +94,4 @@ DeviceFileEvents
 ## Revision History:
 | **Version** | **Changes**                   | **Date**         | **Modified By**   |
 |-------------|-------------------------------|------------------|-------------------|
-| 1.0         | Initial draft                  | `September  6, 2024`  | `Josh Madakor`   
+| 1.0         | Initial draft                  | `April  1, 2026`  | `Mr. Sakho`   
