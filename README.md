@@ -39,6 +39,13 @@ Query used to locate the events:
 | order by Timestamp desc  
 | project Timestamp, DeviceName, ActionType, FolderPath, SHA256, Account \= InitiatingProcessAccountName, FileName
 
+
+
+![DFEC](https://github.com/user-attachments/assets/4e810868-9796-4e41-aa92-61651ca9d26f)
+
+
+
+
 Searched the **DeviceProcessEvents**  table for any ProcessCommandLine that contained the string `tor-browser-windows-x86_64-portable-15.0.8.exe. Based on log return`  
 `At this time and date` Mar 29, 2026 – 9:39:39 PM `and employee by the name of`  
 `Buakar on the buakar-threat-hunt device` downloaded the Tor Browser installer from the official Tor website, initiating the staging of anonymization tooling.
@@ -60,7 +67,11 @@ Query used to locate event:
 | where ProcessCommandLine contains "tor.exe"  
 | project Timestamp, AccountName, ActionType, FileName, ProcessCommandLine, FolderPath
 
-![th1](https://github.com/user-attachments/assets/820051b6-b210-4c06-b1e9-ff4846c80e41)
+
+
+![DPEC](https://github.com/user-attachments/assets/b20703ec-404d-4de2-be7a-f67544afbc59)
+
+
 
 
 Searched for the DeviceNetworkEvent for any indication that the tor browser was used to establish connection using any of the known tor port numbers.  
@@ -75,7 +86,12 @@ Query used to locate events:
 | where isnotempty(RemoteIP)  
 | project Timestamp, IsInitiatingProcessRemoteSession, DeviceName, InitiatingProcessAccountName, RemoteIP, RemotePort
 
-![th2](https://github.com/user-attachments/assets/eca0a878-28e8-41d1-9f28-0ac07204cacd)
+
+
+
+![DNEC](https://github.com/user-attachments/assets/0674221b-7562-413b-a445-e74b6f09e912)
+
+
 
 
  The 1 in the initiatingProcessRemoteSession indicates the process was executed. We also see the remote IPs of the sessions. The remote port 9001 is associated with tor. Firefox with tor was also used for normal browsing over port 443 and 8080\. But I filter those out to focus on tor port established connections. 
